@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>财商大挑战 - Financial IQ Challenge</title>
+    <style>
+        /* All CSS inline for a single-file solution */
+        :root {
+            --bg-dark: #0F172A;
+            --bg-card: rgba(30, 41, 59, 0.6);
+            --bg-glass: rgba(255, 255, 255, 0.05);
+            --primary-gold: #D4AF37;
+            --primary-gold-light: #F4D03F;
+            --primary-gold-dark: #B8860B;
+            --accent-green: #10B981;
+            --accent-green-light: #34D399;
+            --error-red: #EF4444;
+            --error-red-light: #F87171;
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --border-color: rgba(212, 175, 55, 0.3);
+            --shadow-gold: 0 4px 20px rgba(212, 175, 55, 0.3);
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --font-title: 'Playfair Display', 'Noto Serif SC', serif;
+            --font-body: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            --transition-fast: 0.2s ease;
+            --transition-medium: 0.3s ease;
+            --transition-slow: 0.5s ease;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { font-size: 16px; scroll-behavior: smooth; }
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+        .background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .chart-line {
+            position: absolute;
+            width: 200%;
+            height: 100px;
+            bottom: -50px;
+            opacity: 0.1;
+            animation: chartMove 15s linear infinite;
+        }
+        .chart-line:nth-child(1) { top: 20%; background: linear-gradient(90deg, transparent, var(--primary-gold), transparent); height: 2px; animation-duration: 20s; }
+        .chart-line:nth-child(2) { top: 50%; background: linear-gradient(90deg, transparent, var(--accent-green), transparent); height: 1px; animation-duration: 25s; animation-direction: reverse; }
+        .chart-line:nth-child(3) { top: 80%; background: linear-gradient(90deg, transparent, var(--text-secondary), transparent); height: 1px; animation-duration: 18s; }
+        .floating-coin {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-gold), var(--primary-gold-dark));
+            opacity: 0.05;
+            animation: floatCoin 20s linear infinite;
+        }
+        .floating-coin:nth-child(4) { left: -60px; top: 30%; animation-delay: 0s; }
+        .floating-coin:nth-child(5) { left: -60px; top: 60%; animation-delay: 10s; animation-duration: 25s; }
+        @keyframes chartMove { 0% { transform: translateX(0); } 100% { transform: translateX(50%); } }
+        @keyframes floatCoin { 0% { transform: translateX(0) rotate(0deg); } 100% { transform: translateX(calc(100vw + 120px)) rotate(360deg); } }
+        .page { display: none; min-height: 100vh; position: relative; z-index: 1; padding: 20px; }
+        .page.active { display: flex; align-items: center; justify-content: center; animation: pageIn 0.5s ease; }
+        @keyframes pageIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .login-container { width: 100%; max-width: 420px; text-align: center; }
+        .logo-area { margin-bottom: 40px; }
+        .logo-icon { width: 100px; height: 100px; margin: 0 auto 20px; animation: coinSpin 3s ease-in-out infinite; }
+        @keyframes coinSpin { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+        .gold-coin { filter: drop-shadow(0 8px 20px rgba(212, 175, 55, 0.4)); }
+        .main-title {
+            font-family: var(--font-title);
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-gold-light), var(--primary-gold), var(--primary-gold-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+        .subtitle { font-size: 0.9rem; color: var(--text-muted); letter-spacing: 4px; text-transform: uppercase; }
+        .form-area {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 32px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-card);
+            margin-bottom: 30px;
+        }
+        .input-group { margin-bottom: 24px; text-align: left; }
+        .input-group label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; }
+        .input-group input {
+            width: 100%;
+            padding: 16px 20px;
+            font-size: 1rem;
+            color: var(--text-primary);
+            background: var(--bg-glass);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            outline: none;
+            transition: var(--transition-fast);
+            font-family: var(--font-body);
+        }
+        .input-group input::placeholder { color: var(--text-muted); }
+        .input-group input:focus { border-color: var(--primary-gold); box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1); }
+        .start-button {
+            width: 100%;
+            padding: 18px 32px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--bg-dark);
+            background: linear-gradient(135deg, var(--primary-gold-light), var(--primary-gold));
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: var(--transition-medium);
+            font-family: var(--font-body);
+            box-shadow: var(--shadow-gold);
+        }
+        .start-button:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(212, 175, 55, 0.5); }
+        .arrow-icon { width: 20px; height: 20px; transition: var(--transition-fast); }
+        .start-button:hover .arrow-icon { transform: translateX(4px); }
+        .features { display: flex; justify-content: center; align-items: center; gap: 20px; }
+        .feature-item { text-align: center; }
+        .feature-number { display: block; font-family: var(--font-title); font-size: 1.5rem; color: var(--primary-gold); font-weight: 600; }
+        .feature-text { font-size: 0.75rem; color: var(--text-muted); }
+        .feature-divider { width: 1px; height: 30px; background: var(--border-color); }
+        .quiz-container { width: 100%; max-width: 500px; }
+        .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 0 10px; }
+        .progress-area { flex: 1; }
+        .progress-text { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px; display: block; }
+        .progress-bar { width: 200px; height: 6px; background: var(--bg-glass); border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; width: 10%; background: linear-gradient(90deg, var(--primary-gold), var(--primary-gold-light)); border-radius: 3px; transition: width 0.5s ease; }
+        .score-area { text-align: right; }
+        .score-label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; }
+        .score-value { font-family: var(--font-title); font-size: 2rem; color: var(--primary-gold); font-weight: 700; }
+        .question-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 32px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-card);
+            margin-bottom: 20px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        .question-number { font-size: 0.75rem; color: var(--primary-gold); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; }
+        .question-text { font-size: 1.25rem; font-weight: 500; line-height: 1.8; color: var(--text-primary); margin-bottom: 30px; flex: 1; }
+        .options-container { display: flex; flex-direction: column; gap: 12px; }
+        .option-item {
+            padding: 16px 20px;
+            background: var(--bg-glass);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+        .option-item:hover { border-color: var(--primary-gold); background: rgba(212, 175, 55, 0.1); transform: translateX(4px); }
+        .option-item.selected { border-color: var(--primary-gold); background: rgba(212, 175, 55, 0.15); }
+        .option-item.correct { border-color: var(--accent-green); background: rgba(16, 185, 129, 0.15); }
+        .option-item.wrong { border-color: var(--error-red); background: rgba(239, 68, 68, 0.15); }
+        .option-letter {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--bg-glass);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+            transition: var(--transition-fast);
+        }
+        .option-item:hover .option-letter, .option-item.selected .option-letter { background: var(--primary-gold); color: var(--bg-dark); }
+        .option-item.correct .option-letter { background: var(--accent-green); color: white; }
+        .option-item.wrong .option-letter { background: var(--error-red); color: white; }
+        .result-container { width: 100%; max-width: 450px; text-align: center; }
+        .result-header { margin-bottom: 30px; }
+        .result-title { font-family: var(--font-title); font-size: 2rem; color: var(--text-primary); margin-bottom: 4px; }
+        .result-subtitle { font-size: 0.85rem; color: var(--text-muted); letter-spacing: 3px; text-transform: uppercase; }
+        .score-circle { position: relative; width: 200px; height: 200px; margin: 0 auto 30px; }
+        .score-ring { width: 100%; height: 100%; transform: rotate(-90deg); }
+        .score-bg { fill: none; stroke: var(--bg-glass); stroke-width: 8; }
+        .score-progress { fill: none; stroke: url(#scoreGradient); stroke-width: 8; stroke-linecap: round; stroke-dasharray: 565.48; stroke-dashoffset: 565.48; transition: stroke-dashoffset 1.5s ease; }
+        .score-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+        .final-score { font-family: var(--font-title); font-size: 4rem; font-weight: 700; background: linear-gradient(135deg, var(--primary-gold-light), var(--primary-gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; }
+        .total-score { font-size: 1rem; color: var(--text-muted); display: block; margin-top: 4px; }
+        .title-area { margin-bottom: 30px; }
+        .result-title-text { font-family: var(--font-title); font-size: 1.5rem; color: var(--primary-gold); margin-bottom: 8px; }
+        .result-description { font-size: 0.95rem; color: var(--text-secondary); line-height: 1.6; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 30px; }
+        .stat-item { background: var(--bg-glass); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 20px 12px; }
+        .stat-value { display: block; font-family: var(--font-title); font-size: 1.75rem; color: var(--text-primary); font-weight: 600; margin-bottom: 4px; }
+        .stat-label { font-size: 0.75rem; color: var(--text-muted); }
+        .category-scores { background: var(--bg-glass); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 20px; margin-bottom: 30px; text-align: left; }
+        .category-title { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 16px; text-align: center; }
+        .category-list { display: flex; flex-direction: column; gap: 12px; }
+        .category-item { display: flex; align-items: center; gap: 12px; }
+        .category-name { width: 80px; font-size: 0.85rem; color: var(--text-secondary); }
+        .category-bar { flex: 1; height: 8px; background: var(--bg-dark); border-radius: 4px; overflow: hidden; }
+        .category-fill { height: 100%; background: linear-gradient(90deg, var(--primary-gold), var(--primary-gold-light)); border-radius: 4px; transition: width 0.8s ease; }
+        .category-value { width: 40px; text-align: right; font-size: 0.85rem; color: var(--text-primary); font-weight: 500; }
+        .action-buttons { display: flex; gap: 16px; margin-bottom: 30px; }
+        .action-btn {
+            flex: 1;
+            padding: 16px 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: var(--transition-medium);
+            font-family: var(--font-body);
+        }
+        .action-btn svg { width: 18px; height: 18px; }
+        .action-btn.primary {
+            background: linear-gradient(135deg, var(--primary-gold-light), var(--primary-gold));
+            color: var(--bg-dark);
+            box-shadow: var(--shadow-gold);
+        }
+        .action-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(212, 175, 55, 0.5); }
+        .action-btn.secondary { background: var(--bg-glass); color: var(--text-primary); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .action-btn.secondary:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.3); }
+        .footer-info { font-size: 0.75rem; color: var(--text-muted); }
+        .feedback-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 500;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+        .feedback-overlay.active { display: flex; }
+        .feedback-content {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px 60px;
+            text-align: center;
+            border: 2px solid;
+            animation: feedbackPop 0.3s ease;
+        }
+        @keyframes feedbackPop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .feedback-content.correct { border-color: var(--accent-green); }
+        .feedback-content.wrong { border-color: var(--error-red); }
+        .feedback-icon { width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+        .feedback-content.correct .feedback-icon { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
+        .feedback-content.wrong .feedback-icon { background: rgba(239, 68, 68, 0.2); color: var(--error-red); }
+        .feedback-text { font-size: 1.1rem; font-weight: 500; }
+        .feedback-content.correct .feedback-text { color: var(--accent-green); }
+        .feedback-content.wrong .feedback-text { color: var(--error-red); }
+        @keyframes fadeOut { to { opacity: 0; transform: translateY(-20px); } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        .fade-out { animation: fadeOut 0.3s ease forwards; }
+        .pulse { animation: pulse 0.5s ease; }
+        @media (max-width: 480px) {
+            .main-title { font-size: 2rem; }
+            .form-area { padding: 24px; }
+            .question-card { padding: 24px; min-height: 350px; }
+            .question-text { font-size: 1.1rem; }
+            .score-circle { width: 160px; height: 160px; }
+            .final-score { font-size: 3rem; }
+            .stats-grid { gap: 10px; }
+            .stat-item { padding: 16px 8px; }
+            .stat-value { font-size: 1.5rem; }
+            .action-buttons { flex-direction: column; }
+            .features { flex-wrap: wrap; gap: 16px; }
+            .feature-divider { display: none; }
+        }
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(239, 68, 68, 0.95);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 1rem;
+            z-index: 2000;
+            animation: toastIn 0.3s ease forwards;
+        }
+        @keyframes toastIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+    </style>
+</head>
+<body>
+    <div class="background-animation">
+        <div class="chart-line"></div>
+        <div class="chart-line"></div>
+        <div class="chart-line"></div>
+        <div class="floating-coin"></div>
+        <div class="floating-coin"></div>
+    </div>
+
+    <div id="login-page" class="page active">
+        <div class="login-container">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 100 100" class="gold-coin">
+                        <circle cx="50" cy="50" r="45" fill="url(#goldGradient)"/>
+                        <defs>
+                            <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#F4D03F"/>
+                                <stop offset="50%" style="stop-color:#D4AF37"/>
+                                <stop offset="100%" style="stop-color:#B8860B"/>
+                            </linearGradient>
+                        </defs>
+                        <text x="50" y="60" text-anchor="middle" font-size="40" fill="#1a1a2e" font-weight="bold">¥</text>
+                    </svg>
+                </div>
+                <h1 class="main-title">财商大挑战</h1>
+                <p class="subtitle">Financial IQ Challenge</p>
+            </div>
+
+            <div class="form-area">
+                <div class="input-group">
+                    <label for="nickname">你的昵称</label>
+                    <input type="text" id="nickname" placeholder="请输入你的昵称" maxlength="20">
+                </div>
+                <div class="input-group">
+                    <label for="phone">手机号码</label>
+                    <input type="tel" id="phone" placeholder="请输入手机号码" maxlength="11">
+                </div>
+                <button id="start-btn" class="start-button">
+                    <span>开始挑战</span>
+                    <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="features">
+                <div class="feature-item">
+                    <span class="feature-number">50</span>
+                    <span class="feature-text">道精选题库</span>
+                </div>
+                <div class="feature-divider"></div>
+                <div class="feature-item">
+                    <span class="feature-number">10</span>
+                    <span class="feature-text">道随机抽题</span>
+                </div>
+                <div class="feature-divider"></div>
+                <div class="feature-item">
+                    <span class="feature-number">100</span>
+                    <span class="feature-text">分满分挑战</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="quiz-page" class="page">
+        <div class="quiz-container">
+            <div class="quiz-header">
+                <div class="progress-area">
+                    <span class="progress-text">第 <span id="current-question">1</span> / 10 题</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                </div>
+                <div class="score-area">
+                    <span class="score-label">当前得分</span>
+                    <span class="score-value" id="current-score">0</span>
+                </div>
+            </div>
+
+            <div class="question-card" id="question-card">
+                <div class="question-number">问题</div>
+                <h2 class="question-text" id="question-text"></h2>
+                <div class="options-container" id="options-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="result-page" class="page">
+        <div class="result-container">
+            <div class="result-header">
+                <h2 class="result-title">测试报告</h2>
+                <p class="result-subtitle">Test Report</p>
+            </div>
+
+            <div class="score-circle">
+                <svg class="score-ring" viewBox="0 0 200 200">
+                    <defs>
+                        <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#F4D03F"/>
+                            <stop offset="100%" style="stop-color:#D4AF37"/>
+                        </linearGradient>
+                    </defs>
+                    <circle class="score-bg" cx="100" cy="100" r="90"/>
+                    <circle class="score-progress" cx="100" cy="100" r="90" id="score-ring"/>
+                </svg>
+                <div class="score-content">
+                    <span class="final-score" id="final-score">0</span>
+                    <span class="total-score">/ 100</span>
+                </div>
+            </div>
+
+            <div class="title-area">
+                <h3 class="result-title-text" id="result-title"></h3>
+                <p class="result-description" id="result-description"></p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-value" id="correct-count">0</span>
+                    <span class="stat-label">答对题数</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="time-used">0</span>
+                    <span class="stat-label">用时(秒)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="ranking">--%</span>
+                    <span class="stat-label">超越用户</span>
+                </div>
+            </div>
+
+            <div class="category-scores">
+                <h4 class="category-title">各维度表现</h4>
+                <div class="category-list" id="category-list"></div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn primary" id="retry-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 4v6h-6"/>
+                        <path d="M1 20v-6h6"/>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                    </svg>
+                    <span>再测一次</span>
+                </button>
+            </div>
+
+            <div class="footer-info">
+                <p>本测试仅供参考，不构成任何投资建议</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="feedback-overlay" id="feedback-overlay">
+        <div class="feedback-content" id="feedback-content">
+            <div class="feedback-icon" id="feedback-icon"></div>
+            <p class="feedback-text" id="feedback-text"></p>
+        </div>
+    </div>
+
+    <script>
+        // Question Bank - 50 questions in 5 categories
+        const questionBank = [
+            { id: 1, category: '消费观念', question: '收到一笔意外收入（如年终奖），你会怎么做？', options: ['全部存进银行定期存款', '买一款心仪已久的奢侈品', '进行多元化投资配置', '还清所有欠款'], correct: 2, difficulty: 'medium' },
+            { id: 2, category: '消费观念', question: '以下哪种消费习惯最有利于财富积累？', options: ['月光族，每月花光所有收入', '先消费后储蓄，总是存不下钱', '先储蓄后消费，每月固定存20%以上', '使用信用卡透支消费'], correct: 2, difficulty: 'easy' },
+            { id: 3, category: '消费观念', question: '你在购物时通常会：', options: ['看到喜欢就买，从不比较价格', '等促销活动时大量囤货', '会进行价格比较，考虑性价比', '只买最便宜的，不考虑质量'], correct: 2, difficulty: 'easy' },
+            { id: 4, category: '消费观念', question: "关于'分期付款'，以下说法正确的是？", options: ['分期付款总利息比一次性付清多', '分期付款可以完全免息', '分期付款没有任何风险', '分期付款能提高征信评分'], correct: 0, difficulty: 'medium' },
+            { id: 5, category: '消费观念', question: "你认为'活在当下'和'为未来储蓄'之间应该：", options: ['完全享受当下，不用考虑未来', '牺牲所有当下享受，全部存钱', '找到平衡点，既享受生活又为未来储备', '听从父母安排，不用自己规划'], correct: 2, difficulty: 'medium' },
+            { id: 6, category: '消费观念', question: "面对商家的'限时优惠'和'限量抢购'营销手段，你应该：", options: ['立刻下单，生怕错过', '完全无视，商家都是骗人的', '理性判断是否真的需要这个商品', '等半小时后再决定，避免冲动消费'], correct: 2, difficulty: 'easy' },
+            { id: 7, category: '消费观念', question: '以下哪项支出最应该被优先削减？', options: ['必要的住房费用', '基本饮食开销', '频繁的外卖和奶茶消费', '交通费用'], correct: 2, difficulty: 'easy' },
+            { id: 8, category: '消费观念', question: "关于'订阅制'服务（如视频会员、音乐APP），你的看法是：", options: ['月费很低，不用就亏了，所以全开', '完全不值得订阅任何服务', '评估使用频率，选择真正需要的', '和朋友共用账号更划算'], correct: 2, difficulty: 'medium' },
+            { id: 9, category: '消费观念', question: '你计划购买一台新手机，正确的做法是：', options: ['买最新最贵的旗舰机', '买最便宜的，能用就行', '根据自己的实际需求和经济能力选择', '分期24个月买最新款'], correct: 2, difficulty: 'easy' },
+            { id: 10, category: '消费观念', question: "'拿铁因子'指的是什么？", options: ['银行推出的一款理财产品', '每天一杯咖啡这样的小额持续消费', '股票市场的一种指标', '一种投资基金的名称'], correct: 1, difficulty: 'medium' },
+            { id: 11, category: '理财基础', question: "'复利'被称为世界第几大奇迹？", options: ['第五大奇迹', '第六大奇迹', '第七大奇迹', '第八大奇迹'], correct: 3, difficulty: 'medium' },
+            { id: 12, category: '理财基础', question: '如果你有10万元，年化收益率8%，按复利计算，10年后大约有多少钱？', options: ['约14万元', '约18万元', '约21万元', '约25万元'], correct: 2, difficulty: 'hard' },
+            { id: 13, category: '理财基础', question: "以下哪个不是'通货膨胀'带来的影响？", options: ['同样金额能买到的东西变少', '存款的实际购买力下降', '对借款人有利', '对债权人有利'], correct: 3, difficulty: 'medium' },
+            { id: 14, category: '理财基础', question: "'资产配置'的核心目的是什么？", options: ['把所有钱都放在一个篮子里', '最大化投资收益', '通过分散投资降低风险', '逃避税收'], correct: 2, difficulty: 'medium' },
+            { id: 15, category: '理财基础', question: '以下哪种投资产品风险最高？', options: ['国债', '银行定期存款', '股票', '货币基金'], correct: 2, difficulty: 'easy' },
+            { id: 16, category: '理财基础', question: "'年化收益率'的含义是：", options: ['实际到手的收益率', '投资一年能获得的收益率', '一个月的收益率', '任意时段的收益率'], correct: 1, difficulty: 'medium' },
+            { id: 17, category: '理财基础', question: "什么是'72法则'？", options: ['72小时不睡觉就会猝死', '用72除以年化收益率，估算本金翻倍所需年数', '72法则选股法', '一种理财产品的名称'], correct: 1, difficulty: 'medium' },
+            { id: 18, category: '理财基础', question: '如果你想保本理财，应该选择：', options: ['股票基金', 'P2P网贷', '银行存款或国债', '数字货币'], correct: 2, difficulty: 'easy' },
+            { id: 19, category: '理财基础', question: "'被动收入'不包括以下哪种方式？", options: ['房租收入', '股票分红', '工资收入', '债券利息'], correct: 2, difficulty: 'medium' },
+            { id: 20, category: '理财基础', question: "关于'紧急备用金'，正确的做法是：", options: ['应该全部投入高收益产品', '存3-6个月生活费在流动性高的账户', '不需要准备紧急备用金', '存在银行活期账户就行，不用管'], correct: 1, difficulty: 'medium' },
+            { id: 21, category: '风险意识', question: "接到自称是'公检法'机关的电话，说你涉嫌洗钱，要求转账到'安全账户'，你应该：", options: ['立即按要求转账', '询问更多细节确认', '这是诈骗，挂断并报警', '要求对方出示证件照片'], correct: 2, difficulty: 'easy' },
+            { id: 22, category: '风险意识', question: "以下哪种保险是'刚需'型保险？", options: ['投资理财型保险', '高端医疗险', '百万医疗险', '分红型寿险'], correct: 2, difficulty: 'medium' },
+            { id: 23, category: '风险意识', question: "'杀猪盘'诈骗的特点是：", options: ['通过快递包裹诈骗', '以恋爱为名，诱导投资博彩', '冒充客服退款', '虚假招聘兼职'], correct: 1, difficulty: 'medium' },
+            { id: 24, category: '风险意识', question: '关于信用卡安全，以下做法错误的是：', options: ['不随意透露信用卡CVV码', '定期检查账单交易记录', '将信用卡正反面拍照保存', '开通交易提醒服务'], correct: 2, difficulty: 'medium' },
+            { id: 25, category: '风险意识', question: "'庞氏骗局'的本质是：", options: ['合法的投资理财方式', '用新投资者的钱支付老投资者的收益', '政府担保的投资项目', '高风险高收益的基金'], correct: 1, difficulty: 'medium' },
+            { id: 26, category: '风险意识', question: '投资理财时，"收益越高风险越大"这句话：', options: ['完全正确', '完全错误', '只在特定情况下成立', '只适用于股票市场'], correct: 0, difficulty: 'easy' },
+            { id: 27, category: '风险意识', question: '以下哪个不是正规金融机构的特征？', options: ['在中国证监会/银保监会备案', '承诺保本且收益超过20%', '有实体办公地址', '可查询到营业执照'], correct: 1, difficulty: 'medium' },
+            { id: 28, category: '风险意识', question: "'医保外用药'指的是：", options: ['进口药品', '不在医保报销范围内的药品', '国外生产的药品', '高价药品'], correct: 1, difficulty: 'hard' },
+            { id: 29, category: '风险意识', question: '面对高收益理财产品，你应该：', options: ['立刻大额投入', '先了解产品详情和风险', '问问亲戚朋友是否也买了', '只投一点点试试水'], correct: 1, difficulty: 'easy' },
+            { id: 30, category: '风险意识', question: "'黑天鹅事件'指的是：", options: ['股市大涨', '突然发生的极小概率重大事件', '每周都有的常规波动', '政府出台的利好政策'], correct: 1, difficulty: 'medium' },
+            { id: 31, category: '投资直觉', question: '如果你投资的基金一天内下跌了5%，你应该：', options: ['立刻全部赎回，避免更大损失', '追加投资，越跌越买', '分析下跌原因，再做决定', '诅咒基金经理'], correct: 2, difficulty: 'medium' },
+            { id: 32, category: '投资直觉', question: "'追涨杀跌'是一种：", options: ['正确的投资策略', '理性的投资行为', '常见的错误投资行为', '巴菲特推荐的投资方法'], correct: 2, difficulty: 'easy' },
+            { id: 33, category: '投资直觉', question: '基金定投的核心原理是：', options: ['在固定时间买入固定金额，平摊成本', '一次性投入全部资金', '只在基金上涨时买入', '只在基金下跌时买入'], correct: 0, difficulty: 'medium' },
+            { id: 34, category: '投资直觉', question: '投资时"不要把鸡蛋放在一个篮子里"是为了：', options: ['提高收益', '分散风险', '方便管理', '展示专业形象'], correct: 1, difficulty: 'easy' },
+            { id: 35, category: '投资直觉', question: '当市场上所有人都在谈论股票时，这通常意味着：', options: ['牛市刚开始，应该加大投入', '市场可能已经过热', '这是入场的好时机', '说明股票是最安全的投资'], correct: 1, difficulty: 'medium' },
+            { id: 36, category: '投资直觉', question: "'止损'的意义是：", options: ['停止赚钱', '设定亏损上限，避免更大损失', '永远不卖出的意思', '一种股票分析指标'], correct: 1, difficulty: 'medium' },
+            { id: 37, category: '投资直觉', question: '投资ETF和投资单只股票相比，优势在于：', options: ['收益一定更高', '风险更分散，操作更简单', '手续费更贵', '信息更不透明'], correct: 1, difficulty: 'medium' },
+            { id: 38, category: '投资直觉', question: '在投资组合中配置债券基金，主要目的是：', options: ['追求最高收益', '降低整体组合波动', '支持国家建设', '缴纳更少的税'], correct: 1, difficulty: 'medium' },
+            { id: 39, category: '投资直觉', question: '以下哪种行为最符合"长期投资"理念？', options: ['每天看盘买卖', '频繁更换持仓基金', '持有优质资产穿越牛熊', '只在牛市买入'], correct: 2, difficulty: 'medium' },
+            { id: 40, category: '投资直觉', question: "'格雷厄姆'是谁？", options: ['苹果公司创始人', '沃伦·巴菲特的老师', '诺贝尔经济学奖得主', '美联储主席'], correct: 1, difficulty: 'hard' },
+            { id: 41, category: '宏观视野', question: "央行'降准'通常意味着：", options: ['市场上流动的资金变少', '银行贷款利率上升', '市场上流动的资金变多', '人民币升值'], correct: 2, difficulty: 'medium' },
+            { id: 42, category: '宏观视野', question: "'CPI'是指什么指数？", options: ['消费者价格指数（衡量通胀）', '股票综合指数', '房价指数', '外汇储备指数'], correct: 0, difficulty: 'medium' },
+            { id: 43, category: '宏观视野', question: '当央行加息时，对股市的影响通常是：', options: ['利好股市', '利空股市', '没有影响', '不确定'], correct: 1, difficulty: 'medium' },
+            { id: 44, category: '宏观视野', question: "'经济周期'通常包括几个阶段？", options: ['2个（好与坏）', '3个', '4个（复苏、繁荣、衰退、萧条）', '5个以上'], correct: 2, difficulty: 'medium' },
+            { id: 45, category: '宏观视野', question: "'GDP'的中文含义是：", options: ['国内生产总值', '国民生产总值', '人均可支配收入', '通货膨胀率'], correct: 0, difficulty: 'easy' },
+            { id: 46, category: '宏观视野', question: "'负利率'意味着：", options: ['银行存款有利息', '存款需要向银行支付费用', '贷款利率为负', '一切都免费'], correct: 1, difficulty: 'hard' },
+            { id: 47, category: '宏观视野', question: "人民币'汇率'升值意味着：", options: ['同样金额的人民币能换更多外币', '进口商品变便宜', '出口商品竞争力下降', '以上都是'], correct: 3, difficulty: 'medium' },
+            { id: 48, category: '宏观视野', question: "'供给侧改革'主要针对的是：", options: ['刺激消费需求', '优化产能和产业结构', '增加货币供应', '降低税收'], correct: 1, difficulty: 'hard' },
+            { id: 49, category: '宏观视野', question: '当经济下行时，政府可能采取的财政政策是：', options: ['减少政府支出', '增加税收', '增加基础设施建设投资', '提高利率'], correct: 2, difficulty: 'medium' },
+            { id: 50, category: '宏观视野', question: "'数字人民币'与传统纸币相比，最大的特点是：", options: ['没有区别', '可以追踪每一笔交易', '不需要手机', '由私人公司发行'], correct: 1, difficulty: 'medium' }
+        ];
+
+        // Game Class
+        class FinancialQuizGame {
+            constructor() {
+                this.user = { nickname: '', phone: '' };
+                this.questions = [];
+                this.currentQuestionIndex = 0;
+                this.score = 0;
+                this.correctCount = 0;
+                this.startTime = 0;
+                this.userAnswers = [];
+                this.categoryScores = {};
+                this.initCategoryScores();
+                this.bindEvents();
+                this.checkExistingUser();
+            }
+
+            initCategoryScores() {
+                const categories = ['消费观念', '理财基础', '风险意识', '投资直觉', '宏观视野'];
+                categories.forEach(cat => { this.categoryScores[cat] = { correct: 0, total: 0 }; });
+            }
+
+            bindEvents() {
+                document.getElementById('start-btn').addEventListener('click', () => this.startGame());
+                document.getElementById('nickname').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('phone').focus(); });
+                document.getElementById('phone').addEventListener('keypress', (e) => { if (e.key === 'Enter') this.startGame(); });
+                document.getElementById('retry-btn').addEventListener('click', () => this.resetGame());
+            }
+
+            checkExistingUser() {
+                const savedUser = localStorage.getItem('quiz_user');
+                if (savedUser) {
+                    try { this.user = JSON.parse(savedUser); } catch (e) {}
+                }
+            }
+
+            validateInput() {
+                const nickname = document.getElementById('nickname').value.trim();
+                const phone = document.getElementById('phone').value.trim();
+                if (!nickname) { this.showToast('请输入昵称'); return false; }
+                if (nickname.length > 20) { this.showToast('昵称不能超过20个字符'); return false; }
+                if (!phone) { this.showToast('请输入手机号码'); return false; }
+                const phoneRegex = /^1[3-9]\d{9}$/;
+                if (!phoneRegex.test(phone)) { this.showToast('请输入有效的手机号码'); return false; }
+                this.user.nickname = nickname;
+                this.user.phone = phone;
+                localStorage.setItem('quiz_user', JSON.stringify(this.user));
+                return true;
+            }
+
+            selectRandomQuestions() {
+                const categories = {};
+                questionBank.forEach(q => { if (!categories[q.category]) categories[q.category] = []; categories[q.category].push(q); });
+                this.questions = [];
+                Object.keys(categories).forEach(category => {
+                    const shuffled = this.shuffleArray([...categories[category]]);
+                    this.questions.push(...shuffled.slice(0, 2));
+                });
+                this.questions = this.shuffleArray(this.questions);
+            }
+
+            shuffleArray(array) {
+                const newArray = [...array];
+                for (let i = newArray.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+                }
+                return newArray;
+            }
+
+            startGame() {
+                if (!this.validateInput()) return;
+                this.resetGameState();
+                this.selectRandomQuestions();
+                document.getElementById('login-page').classList.remove('active');
+                document.getElementById('quiz-page').classList.add('active');
+                this.startTime = Date.now();
+                this.displayQuestion();
+            }
+
+            resetGameState() {
+                this.currentQuestionIndex = 0;
+                this.score = 0;
+                this.correctCount = 0;
+                this.userAnswers = [];
+                this.initCategoryScores();
+                document.getElementById('current-score').textContent = '0';
+            }
+
+            displayQuestion() {
+                const question = this.questions[this.currentQuestionIndex];
+                document.getElementById('current-question').textContent = this.currentQuestionIndex + 1;
+                const progressPercent = ((this.currentQuestionIndex + 1) / 10) * 100;
+                document.getElementById('progress-fill').style.width = progressPercent + '%';
+                document.getElementById('question-text').textContent = question.question;
+                const optionsContainer = document.getElementById('options-container');
+                optionsContainer.innerHTML = '';
+                const letters = ['A', 'B', 'C', 'D'];
+                question.options.forEach((option, index) => {
+                    const optionEl = document.createElement('div');
+                    optionEl.className = 'option-item';
+                    optionEl.innerHTML = `<span class="option-letter">${letters[index]}</span><span class="option-text">${option}</span>`;
+                    optionEl.addEventListener('click', () => this.selectOption(index));
+                    optionsContainer.appendChild(optionEl);
+                });
+                const questionCard = document.getElementById('question-card');
+                questionCard.classList.add('fade-out');
+                setTimeout(() => { questionCard.classList.remove('fade-out'); questionCard.classList.add('pulse'); setTimeout(() => questionCard.classList.remove('pulse'), 500); }, 300);
+            }
+
+            selectOption(selectedIndex) {
+                const options = document.querySelectorAll('.option-item');
+                if (options[selectedIndex].classList.contains('selected')) return;
+                const question = this.questions[this.currentQuestionIndex];
+                const isCorrect = selectedIndex === question.correct;
+                this.userAnswers.push({ questionId: question.id, selected: selectedIndex, correct: isCorrect });
+                this.categoryScores[question.category].total++;
+                if (isCorrect) this.categoryScores[question.category].correct++;
+                options.forEach((opt, idx) => {
+                    opt.style.pointerEvents = 'none';
+                    if (idx === selectedIndex) {
+                        opt.classList.add('selected');
+                        opt.classList.add(isCorrect ? 'correct' : 'wrong');
+                    }
+                    if (idx === question.correct && !isCorrect) opt.classList.add('correct');
+                });
+                if (isCorrect) { this.score += 10; this.correctCount++; document.getElementById('current-score').textContent = this.score; }
+                this.showFeedback(isCorrect);
+                setTimeout(() => this.nextQuestion(), 1200);
+            }
+
+            showFeedback(isCorrect) {
+                const overlay = document.getElementById('feedback-overlay');
+                const content = document.getElementById('feedback-content');
+                const icon = document.getElementById('feedback-icon');
+                const text = document.getElementById('feedback-text');
+                content.className = 'feedback-content ' + (isCorrect ? 'correct' : 'wrong');
+                icon.textContent = isCorrect ? '✓' : '✗';
+                text.textContent = isCorrect ? '回答正确 +10分' : '回答错误';
+                overlay.classList.add('active');
+                setTimeout(() => overlay.classList.remove('active'), 800);
+            }
+
+            nextQuestion() {
+                this.currentQuestionIndex++;
+                if (this.currentQuestionIndex >= 10) this.showResults();
+                else this.displayQuestion();
+            }
+
+            showResults() {
+                const endTime = Date.now();
+                const timeUsed = Math.round((endTime - this.startTime) / 1000);
+                document.getElementById('quiz-page').classList.remove('active');
+                document.getElementById('result-page').classList.add('active');
+                const result = this.calculateResult();
+                document.getElementById('final-score').textContent = this.score;
+                document.getElementById('result-title').textContent = result.title;
+                document.getElementById('result-description').textContent = result.description;
+                document.getElementById('correct-count').textContent = this.correctCount;
+                document.getElementById('time-used').textContent = timeUsed;
+                const rankingPercent = Math.floor(Math.random() * 30) + 60;
+                document.getElementById('ranking').textContent = rankingPercent + '%';
+                this.updateCategoryScores();
+                setTimeout(() => {
+                    document.getElementById('score-ring').style.strokeDashoffset = 565.48 - (this.score / 100) * 565.48;
+                }, 300);
+            }
+
+            calculateResult() {
+                if (this.score >= 90) return { title: '华尔街之狼', description: '太棒了！你的财商水平堪称大师级，巴菲特都要请你吃饭！对财经知识了如指掌，投资理财不在话下。' };
+                else if (this.score >= 70) return { title: '投资新贵', description: '不错！你的财商基础相当扎实，眼光独到，未来可期！继续保持学习，前途无量。' };
+                else if (this.score >= 50) return { title: '精明管家', description: '还可以！持家有道，稳健前行。但还有一些知识点需要加强，建议多关注财经资讯。' };
+                else return { title: '理财小白', description: '财务自由路漫漫！建议从基础理财知识学起，改变消费观念，为未来的财富积累打下基础。' };
+            }
+
+            updateCategoryScores() {
+                const categoryList = document.getElementById('category-list');
+                categoryList.innerHTML = '';
+                const categoryNames = { '消费观念': '消费观念', '理财基础': '理财基础', '风险意识': '风险意识', '投资直觉': '投资直觉', '宏观视野': '宏观视野' };
+                Object.entries(this.categoryScores).forEach(([category, data]) => {
+                    if (data.total > 0) {
+                        const percentage = (data.correct / data.total) * 100;
+                        const item = document.createElement('div');
+                        item.className = 'category-item';
+                        item.innerHTML = `<span class="category-name">${categoryNames[category]}</span><div class="category-bar"><div class="category-fill" style="width: 0%"></div></div><span class="category-value">${data.correct}/${data.total}</span>`;
+                        categoryList.appendChild(item);
+                        setTimeout(() => item.querySelector('.category-fill').style.width = percentage + '%', 300);
+                    }
+                });
+            }
+
+            resetGame() {
+                document.getElementById('result-page').classList.remove('active');
+                document.getElementById('login-page').classList.add('active');
+                document.getElementById('score-ring').style.strokeDashoffset = 565.48;
+            }
+
+            showToast(message) {
+                const toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.textContent = message;
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.animation = 'toastIn 0.3s ease forwards';
+                    setTimeout(() => toast.remove(), 300);
+                }, 2000);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => { window.game = new FinancialQuizGame(); });
+    </script>
+</body>
+</html>
